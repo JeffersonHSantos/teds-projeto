@@ -14,6 +14,10 @@ return new class extends Migration
         Schema::create('professors', function (Blueprint $table) {
             $table->id();
             $table->string('nome');
+            $table->string('email')->unique();
+            $table->string('departamento');
+            $table->string('telefone')->nullable();
+            $table->text('biografia')->nullable();
             $table->timestamps();
         });
     }
