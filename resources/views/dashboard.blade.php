@@ -148,6 +148,22 @@
                     await document.exitFullscreen();
                 }
             });
+
+            // Ativa/desativa tela cheia ao pressionar F11 (reaproveita os botões existentes)
+            document.addEventListener('keydown', function (e) {
+                const key = e.key || e.code || e.keyCode;
+                const isF11 = key === 'F11' || key === 'OSF11' || key === 122 || key === 'F11';
+                if (!isF11) return;
+
+                // Tenta prevenir o comportamento nativo do navegador
+                try { e.preventDefault(); } catch (err) {}
+
+                if (!document.fullscreenElement) {
+                    fullscreenButton.click();
+                } else {
+                    exitFullscreenButton.click();
+                }
+            });
         });
     </script>
 </x-app-layout>

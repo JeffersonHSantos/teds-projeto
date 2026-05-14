@@ -15,21 +15,25 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         Painel
                     </x-nav-link>
+
+                    <x-nav-link :href="route('cursos.index')" :active="request()->routeIs('cursos.*')">
+                        Cursos
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('professores.index')" :active="request()->routeIs('professores.*')">
+                        Professores
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('salas.index')" :active="request()->routeIs('salas.*')">
+                        Salas
+                    </x-nav-link>
+
+                    <x-nav-link :href="route('aulas.index')" :active="request()->routeIs('aulas.*')">
+                        Aulas
+                    </x-nav-link>
                 </div>
             </div>
-            <x-nav-link :href="route('cursos.index')" :active="request()->routeIs('cursos.*')">
-                Cursos
-            </x-nav-link>
-
-            <x-nav-link :href="route('professores.index')" :active="request()->routeIs('professores.*')">
-                Professores
-            </x-nav-link>
-            <x-nav-link :href="route('salas.index')" :active="request()->routeIs('salas.*')">
-                Salas
-            </x-nav-link>
-            <x-nav-link :href="route('aulas.index')" :active="request()->routeIs('aulas.*')">
-                Aulas
-            </x-nav-link>
+            
 
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
@@ -89,6 +93,22 @@
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 Painel
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('cursos.index')" :active="request()->routeIs('cursos.*')">
+                Cursos
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('professores.index')" :active="request()->routeIs('professores.*')">
+                Professores
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('salas.index')" :active="request()->routeIs('salas.*')">
+                Salas
+            </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('aulas.index')" :active="request()->routeIs('aulas.*')">
+                Aulas
             </x-responsive-nav-link>
         </div>
 
