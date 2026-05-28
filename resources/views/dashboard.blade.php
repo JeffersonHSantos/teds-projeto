@@ -1,6 +1,36 @@
 <x-app-layout>
     @php
         $dataSelecionada = \Carbon\Carbon::parse($selectedDate);
+        $statusClasses = [
+            'AGENDADA' => 'bg-gradient-to-r from-sky-100 via-cyan-100 to-sky-50 text-sky-800 border-sky-200',
+            'EM_ANDAMENTO' => 'bg-amber-100 text-amber-800 border-amber-200',
+            'REALIZADA' => 'bg-gradient-to-r from-emerald-100 via-lime-100 to-emerald-50 text-emerald-800 border-emerald-200',
+            'CANCELADA' => 'bg-gray-200 text-gray-700 border-gray-300',
+        ];
+        $rowClasses = [
+            'AGENDADA' => 'status-row-status-agendada',
+            'EM_ANDAMENTO' => 'status-row-status-em-andamento',
+            'REALIZADA' => 'status-row-status-realizada',
+            'CANCELADA' => 'status-row-status-cancelada',
+        ];
+        $cellClasses = [
+            'AGENDADA' => 'status-cell-status-agendada',
+            'EM_ANDAMENTO' => 'status-cell-status-em-andamento',
+            'REALIZADA' => 'status-cell-status-realizada',
+            'CANCELADA' => 'status-cell-status-cancelada',
+        ];
+        $rowStyles = [
+            'AGENDADA' => 'background-color: #eff6ff;',
+            'EM_ANDAMENTO' => 'background-color: #fef3c7;',
+            'REALIZADA' => 'background-color: #ecfdf5;',
+            'CANCELADA' => 'background-color: #f3f4f6;',
+        ];
+        $cellStyles = [
+            'AGENDADA' => 'background-color: #dbeafe;',
+            'EM_ANDAMENTO' => 'background-color: #fde68a;',
+            'REALIZADA' => 'background-color: #d1fae5;',
+            'CANCELADA' => 'background-color: #e5e7eb;',
+        ];
         $diasSemana = [
             'Domingo',
             'Segunda-feira',
@@ -36,8 +66,68 @@
             display: block;
         }
 
-        #painel-tv:fullscreen .tv-exit-button {
-            display: inline-flex;
+        @keyframes statusPulseSoft {
+            0%,
+            100% {
+                box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.35);
+            }
+
+            50% {
+                box-shadow: inset 0 0 0 1px rgba(251, 191, 36, 0.7), 0 0 0 4px rgba(251, 191, 36, 0.08);
+            }
+        }
+
+        @keyframes statusColorShiftAgendada {
+            0%,
+            100% {
+                background-color: #eff6ff;
+            }
+
+            50% {
+                background-color: #dbeafe;
+            }
+        }
+
+        @keyframes statusColorShiftRealizada {
+            0%,
+            100% {
+                background-color: #ecfdf5;
+            }
+
+            50% {
+                background-color: #d1fae5;
+            }
+        }
+
+        @keyframes statusColorShiftEmAndamento {
+            0%,
+            100% {
+                background-color: #fef3c7;
+            }
+
+            50% {
+                background-color: #fde68a;
+            }
+        }
+
+        .status-row-status-agendada,
+        .status-cell-status-agendada {
+            animation: statusColorShiftAgendada 7s ease-in-out infinite;
+        }
+
+        .status-row-status-em-andamento,
+        .status-cell-status-em-andamento {
+            animation: statusColorShiftEmAndamento 4.5s ease-in-out infinite;
+        }
+
+        .status-row-status-realizada,
+        .status-cell-status-realizada {
+            animation: statusColorShiftRealizada 7s ease-in-out infinite;
+        }
+
+        .status-row-status-cancelada,
+        .status-cell-status-cancelada {
+            background-color: #e5e7eb;
         }
     </style>
 
@@ -45,16 +135,6 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div id="painel-tv" class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
-                    <div class="mb-4 flex justify-end">
-                        <button
-                            id="tv-exit-fullscreen"
-                            type="button"
-                            class="tv-exit-button hidden items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-                        >
-                            Sair da Tela Cheia
-                        </button>
-                    </div>
-
                     <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-6">
                         <div class="tv-hide-in-fullscreen">
                             <h3 class="text-lg font-semibold text-gray-800">Aulas por Data</h3>
@@ -97,20 +177,29 @@
                                     <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Curso</th>
                                     <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Professor</th>
                                     <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Sala</th>
+                                    <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Status</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="dashboard-aulas-tbody">
                                 @forelse($aulasDoDia as $aula)
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="border border-gray-300 px-4 py-3">{{ substr($aula->horario, 0, 5) }}</td>
-                                        <td class="border border-gray-300 px-4 py-3">{{ $aula->materia }}</td>
-                                        <td class="border border-gray-300 px-4 py-3">{{ $aula->curso->nome }}</td>
-                                        <td class="border border-gray-300 px-4 py-3">{{ $aula->professor->nome }}</td>
-                                        <td class="border border-gray-300 px-4 py-3">{{ $aula->sala->nome }}</td>
+                                    @php
+                                        $statusAtual = $aula->statusAtual();
+                                    @endphp
+                                    <tr class="{{ $rowClasses[$statusAtual] ?? 'status-row-status-agendada' }} transition-colors duration-300" style="{{ $rowStyles[$statusAtual] ?? 'background-color: #eff6ff;' }}">
+                                        <td class="border border-gray-300 px-4 py-3" style="{{ $cellStyles[$statusAtual] ?? 'background-color: #dbeafe;' }}">{{ $aula->horario_formatado }}</td>
+                                        <td class="border border-gray-300 px-4 py-3 {{ $cellClasses[$statusAtual] ?? 'status-cell-status-agendada' }}" style="{{ $cellStyles[$statusAtual] ?? 'background-color: #dbeafe;' }}">{{ $aula->materia }}</td>
+                                        <td class="border border-gray-300 px-4 py-3 {{ $cellClasses[$statusAtual] ?? 'status-cell-status-agendada' }}" style="{{ $cellStyles[$statusAtual] ?? 'background-color: #dbeafe;' }}">{{ $aula->curso->nome }}</td>
+                                        <td class="border border-gray-300 px-4 py-3 {{ $cellClasses[$statusAtual] ?? 'status-cell-status-agendada' }}" style="{{ $cellStyles[$statusAtual] ?? 'background-color: #dbeafe;' }}">{{ $aula->professor->nome }}</td>
+                                        <td class="border border-gray-300 px-4 py-3 {{ $cellClasses[$statusAtual] ?? 'status-cell-status-agendada' }}" style="{{ $cellStyles[$statusAtual] ?? 'background-color: #dbeafe;' }}">{{ $aula->sala->nome }}</td>
+                                        <td class="border border-gray-300 px-4 py-3 {{ $cellClasses[$statusAtual] ?? 'status-cell-status-agendada' }}" style="{{ $cellStyles[$statusAtual] ?? 'background-color: #dbeafe;' }}">
+                                            <span class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold {{ $statusClasses[$statusAtual] ?? 'bg-sky-100 text-sky-800 border-sky-200' }}">
+                                                {{ $aula->status_label }}
+                                            </span>
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="border border-gray-300 px-4 py-6 text-center text-gray-500">
+                                        <td colspan="6" class="border border-gray-300 px-4 py-6 text-center text-gray-500">
                                             Nenhuma aula encontrada para esta data.
                                         </td>
                                     </tr>
@@ -127,29 +216,83 @@
         document.addEventListener('DOMContentLoaded', function () {
             const painel = document.getElementById('painel-tv');
             const fullscreenButton = document.getElementById('tv-fullscreen-button');
-            const exitFullscreenButton = document.getElementById('tv-exit-fullscreen');
+            const refreshUrl = @json(route('dashboard', ['data' => $selectedDate]));
+            const tbody = document.getElementById('dashboard-aulas-tbody');
+            let refreshTimer = null;
+            let refreshTimeout = null;
+            let refreshInProgress = false;
 
-            if (!painel || !fullscreenButton || !exitFullscreenButton) {
+            if (!painel || !fullscreenButton || !tbody) {
                 return;
             }
+
+            const atualizarTabelaAulas = async function () {
+                if (refreshInProgress) {
+                    return;
+                }
+
+                refreshInProgress = true;
+
+                try {
+                    const response = await fetch(`${refreshUrl}&_=${Date.now()}`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Cache-Control': 'no-cache',
+                        },
+                        cache: 'no-store',
+                    });
+
+                    if (!response.ok) {
+                        return;
+                    }
+
+                    const html = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const novoTbody = doc.getElementById('dashboard-aulas-tbody');
+
+                    if (novoTbody) {
+                        tbody.innerHTML = novoTbody.innerHTML;
+                    }
+                } catch (error) {
+                    console.error('Falha ao atualizar o painel de aulas.', error);
+                } finally {
+                    refreshInProgress = false;
+                }
+            };
+
+            const agendarAtualizacao = function () {
+                const agora = new Date();
+                const segundosAteProximoMinuto = (60 - agora.getSeconds()) * 1000 - agora.getMilliseconds();
+
+                window.clearTimeout(refreshTimeout);
+                window.clearInterval(refreshTimer);
+
+                refreshTimeout = window.setTimeout(async function () {
+                    await atualizarTabelaAulas();
+                    refreshTimer = window.setInterval(atualizarTabelaAulas, 60000);
+                }, segundosAteProximoMinuto > 0 ? segundosAteProximoMinuto : 1000);
+            };
 
             fullscreenButton.addEventListener('click', async function () {
                 if (!document.fullscreenElement) {
                     try {
                         await painel.requestFullscreen();
                     } catch (error) {
-                        alert('Nao foi possivel ativar a tela cheia neste navegador.');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Falha ao ativar a tela cheia',
+                            text: 'Nao foi possivel ativar a tela cheia neste navegador.',
+                            confirmButtonText: 'Entendi',
+                        });
                     }
                 }
             });
 
-            exitFullscreenButton.addEventListener('click', async function () {
-                if (document.fullscreenElement) {
-                    await document.exitFullscreen();
-                }
-            });
+            atualizarTabelaAulas();
+            agendarAtualizacao();
 
-            // Ativa/desativa tela cheia ao pressionar F11 (reaproveita os botões existentes)
+            // Ativa/desativa tela cheia ao pressionar F11.
             document.addEventListener('keydown', function (e) {
                 const key = e.key || e.code || e.keyCode;
                 const isF11 = key === 'F11' || key === 'OSF11' || key === 122 || key === 'F11';
@@ -161,7 +304,7 @@
                 if (!document.fullscreenElement) {
                     fullscreenButton.click();
                 } else {
-                    exitFullscreenButton.click();
+                    document.exitFullscreen();
                 }
             });
         });

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Aula;
 use App\Models\Curso;
 use Illuminate\Http\Request;
 
@@ -54,6 +55,13 @@ class CursoController extends Controller
 
     public function destroy(Curso $curso)
     {
+        if (Aula::query()
+            ->where('curso_id', $curso->id)
+            ->ativas()
+            ->exists()) {
+            return back()->with('popup_error', 'Não é possível excluir este curso porque existem aulas agendadas ou em andamento vinculadas a ele.');
+        }
+
         $curso->delete();
 
         return redirect()

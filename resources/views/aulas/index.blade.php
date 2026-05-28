@@ -20,18 +20,34 @@
                         <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Matéria</th>
                         <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Data</th>
                         <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Horário</th>
+                        <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Status</th>
                         <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">Ações</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($aulas as $aula)
                         <tr class="hover:bg-gray-50">
+                            @php
+                                $statusAtual = $aula->statusAtual();
+                                $statusClasses = [
+                                    'AGENDADA' => 'bg-blue-100 text-blue-800',
+                                    'EM_ANDAMENTO' => 'bg-amber-100 text-amber-800',
+                                    'REALIZADA' => 'bg-emerald-100 text-emerald-800',
+                                    'CANCELADA' => 'bg-gray-200 text-gray-700',
+                                ];
+                            @endphp
+
                             <td class="border border-gray-300 px-4 py-3">{{ $aula->sala->nome }}</td>
                             <td class="border border-gray-300 px-4 py-3">{{ $aula->curso->nome }}</td>
                             <td class="border border-gray-300 px-4 py-3">{{ $aula->professor->nome }}</td>
                             <td class="border border-gray-300 px-4 py-3">{{ $aula->materia }}</td>
                             <td class="border border-gray-300 px-4 py-3">{{ \Carbon\Carbon::parse($aula->data)->format('d/m/Y') }}</td>
-                            <td class="border border-gray-300 px-4 py-3">{{ $aula->horario }}</td>
+                            <td class="border border-gray-300 px-4 py-3">{{ $aula->horario_formatado }}</td>
+                            <td class="border border-gray-300 px-4 py-3">
+                                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $statusClasses[$statusAtual] ?? 'bg-blue-100 text-blue-800' }}">
+                                    {{ $aula->status_label }}
+                                </span>
+                            </td>
                             <td class="border border-gray-300 px-4 py-3">
                                 <x-ui.row-actions
                                     :edit-route="route('aulas.edit', $aula->id)"

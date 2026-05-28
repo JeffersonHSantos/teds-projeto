@@ -9,7 +9,7 @@
         Editar
     </a>
 
-    <form action="{{ $deleteRoute }}" method="POST" onsubmit="return confirm('{{ $confirmMessage }}');">
+    <form action="{{ $deleteRoute }}" method="POST" data-swal-confirm="{{ $confirmMessage }}">
         @csrf
         @method('DELETE')
 

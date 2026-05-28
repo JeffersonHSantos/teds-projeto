@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Aula;
 use App\Models\Professor;
 use Illuminate\Http\Request;
 
@@ -80,12 +81,17 @@ class ProfessorController extends Controller
      */
     public function destroy(Professor $professor)
     {
-        {
+        if (Aula::query()
+            ->where('professor_id', $professor->id)
+            ->ativas()
+            ->exists()) {
+            return back()->with('popup_error', 'Não é possível excluir este professor porque existem aulas agendadas ou em andamento vinculadas a ele.');
+        }
+
         $professor->delete();
 
         return redirect()
             ->route('professores.index')
             ->with('success', 'Professor removido com sucesso.');
-    }
     }
 }

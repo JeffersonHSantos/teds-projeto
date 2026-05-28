@@ -33,5 +33,31 @@
                 {{ $slot }}
             </main>
         </div>
+
+        @if (session('success'))
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Salvo com sucesso',
+                        text: @json(session('success')),
+                        confirmButtonText: 'OK',
+                    });
+                });
+            </script>
+        @endif
+
+        @if (session('popup_error'))
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Não foi possível concluir',
+                        text: @json(session('popup_error')),
+                        confirmButtonText: 'Entendi',
+                    });
+                });
+            </script>
+        @endif
     </body>
 </html>

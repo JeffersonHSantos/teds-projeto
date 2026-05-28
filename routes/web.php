@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
-});
+})->name('home');
 
 Route::get('/readme', function () {
     return response()->file(base_path('README.md'), [
@@ -26,15 +26,17 @@ Route::get('/dashboard', function (Request $request) {
         $selectedDate = now()->toDateString();
     }
 
+    Aula::atualizarStatusAutomatico();
+
     $aulasDoDia = Aula::with(['sala', 'curso', 'professor'])
         ->whereDate('data', $selectedDate)
-        ->orderBy('horario')
+        ->orderBy('horario_inicio')
         ->get();
 
     return view('dashboard', compact('aulasDoDia', 'selectedDate'));
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('cursos', CursoController::class);
     Route::resource('professores', ProfessorController::class)->parameters(['professores' => 'professor']);

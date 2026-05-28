@@ -6,6 +6,7 @@ use App\Models\Aula;
 use App\Models\Sala;
 use App\Models\Curso;
 use App\Models\Professor;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class AulaController extends Controller
@@ -15,7 +16,12 @@ class AulaController extends Controller
      */
     public function index()
     {
-        $aulas = Aula::with(['sala', 'curso', 'professor'])->get();
+        Aula::atualizarStatusAutomatico();
+
+        $aulas = Aula::with(['sala', 'curso', 'professor'])
+            ->orderBy('data')
+            ->orderBy('horario_inicio')
+            ->get();
         return view('aulas.index', compact('aulas'));
     }
 
@@ -42,12 +48,23 @@ class AulaController extends Controller
             'professor_id' => 'required',
             'materia' => 'required',
             'data' => 'required|date',
-            'horario' => 'required',
+            'horario_inicio' => 'required|date_format:H:i',
+            'horario_termino' => 'required|date_format:H:i|after:horario_inicio',
         ]);
+
+        if ($mensagem = $this->validarConflitosHorario($dados)) {
+            return back()->withInput()->with('popup_error', $mensagem);
+        }
+
+        $dados['horario_inicio'] = Carbon::createFromFormat('H:i', $dados['horario_inicio'])->format('H:i:s');
+        $dados['horario_termino'] = Carbon::createFromFormat('H:i', $dados['horario_termino'])->format('H:i:s');
+        $dados['horario'] = substr($dados['horario_inicio'], 0, 5) . ' - ' . substr($dados['horario_termino'], 0, 5);
 
         Aula::create($dados);
 
-        return redirect()->route('aulas.index');
+        return redirect()
+            ->route('aulas.index')
+            ->with('success', 'Aula cadastrada com sucesso.');
     }
 
     /**
@@ -81,12 +98,23 @@ class AulaController extends Controller
             'professor_id' => 'required',
             'materia' => 'required',
             'data' => 'required|date',
-            'horario' => 'required',
+            'horario_inicio' => 'required|date_format:H:i',
+            'horario_termino' => 'required|date_format:H:i|after:horario_inicio',
         ]);
+
+        if ($mensagem = $this->validarConflitosHorario($dados, $aula->id)) {
+            return back()->withInput()->with('popup_error', $mensagem);
+        }
+
+        $dados['horario_inicio'] = Carbon::createFromFormat('H:i', $dados['horario_inicio'])->format('H:i:s');
+        $dados['horario_termino'] = Carbon::createFromFormat('H:i', $dados['horario_termino'])->format('H:i:s');
+        $dados['horario'] = substr($dados['horario_inicio'], 0, 5) . ' - ' . substr($dados['horario_termino'], 0, 5);
 
         $aula->update($dados);
 
-        return redirect()->route('aulas.index');
+        return redirect()
+            ->route('aulas.index')
+            ->with('success', 'Aula atualizada com sucesso.');
     }
 
     /**
@@ -94,8 +122,32 @@ class AulaController extends Controller
      */
     public function destroy(Aula $aula)
     {
-        $aula->delete();
+        Aula::destroy($aula->id);
 
-    return redirect()->route('aulas.index');
+        return redirect()
+            ->route('aulas.index')
+            ->with('success', 'Aula removida com sucesso.');
+    }
+
+    private function validarConflitosHorario(array $dados, ?int $aulaId = null): ?string
+    {
+        $inicio = Carbon::createFromFormat('H:i', $dados['horario_inicio'])->format('H:i:s');
+        $termino = Carbon::createFromFormat('H:i', $dados['horario_termino'])->format('H:i:s');
+
+        $baseQuery = Aula::query()
+            ->where('data', $dados['data'])
+            ->when($aulaId, fn ($query) => $query->where('id', '!=', $aulaId))
+            ->where('horario_inicio', '<', $termino)
+            ->where('horario_termino', '>', $inicio);
+
+        if ((clone $baseQuery)->where('professor_id', $dados['professor_id'])->exists()) {
+            return 'Este professor já tem aula cadastrada nesta data e hora.';
+        }
+
+        if ((clone $baseQuery)->where('sala_id', $dados['sala_id'])->exists()) {
+            return 'Esta sala já possui aula cadastrada nesta data e hora.';
+        }
+
+        return null;
     }
 }

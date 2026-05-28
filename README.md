@@ -72,13 +72,29 @@ Disponibilizar uma aplicacao para:
 - Exibicao das aulas da data selecionada
 - Ordenacao por horario crescente
 - Exibicao em formato de tabela para consulta rapida
+- Atualizacao automatica do status das aulas no carregamento do painel
+- Atualizacao da tabela em tempo real a cada minuto, sem sair da tela cheia
 
 ### 6. Modo TV (Tela Cheia)
 
 - Botao para entrar em tela cheia
 - Foco somente nas informacoes da tabela
 - Exibicao do dia da semana da data selecionada em fullscreen
-- Botao para sair da tela cheia
+- Saida da tela cheia pelo atalho do navegador ou pela tecla F11
+- Interface com destaque visual por status, incluindo cores nas linhas e nas celulas
+
+### 7. Destaque Visual dos Status
+
+- Coluna de status no dashboard TV com o texto do status atual da aula
+- Linhas e celulas com background colorido por status
+- Em andamento com destaque mais forte e animacao de cor gradativa
+- Agendada e Realizada com cores diferenciadas para facilitar a leitura
+
+### 8. Atualizacao de Status das Aulas
+
+- O sistema sincroniza automaticamente o status das aulas com base no horario atual
+- O painel usa o mesmo calculo de status da listagem de aulas para manter consistencia
+- O status exibido no dashboard reflete o momento atual sem depender de recarregar a pagina manualmente
 
 ## Tecnologias Utilizadas
 

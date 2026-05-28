@@ -51,8 +51,13 @@
                 </div>
 
                 <div>
-                    <label for="horario" class="mb-2 block text-sm font-medium text-gray-700">Horário</label>
-                    <input id="horario" type="text" name="horario" placeholder="Ex: 19:30" value="{{ old('horario', $aula->horario ?? '') }}" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <label for="horario_inicio" class="mb-2 block text-sm font-medium text-gray-700">Horário de início</label>
+                    <input id="horario_inicio" type="time" name="horario_inicio" value="{{ old('horario_inicio', isset($aula) && ($aula->horario_inicio || $aula->horario) ? \Carbon\Carbon::parse($aula->horario_inicio ?? $aula->horario)->format('H:i') : '') }}" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label for="horario_termino" class="mb-2 block text-sm font-medium text-gray-700">Horário de término</label>
+                    <input id="horario_termino" type="time" name="horario_termino" value="{{ old('horario_termino', isset($aula) && $aula->horario_termino ? \Carbon\Carbon::parse($aula->horario_termino)->format('H:i') : '') }}" class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 </div>
             </div>
 
@@ -61,5 +66,6 @@
                 :cancel-route="route('aulas.index')"
             />
         </form>
+
     </x-ui.page-card>
 </x-app-layout>

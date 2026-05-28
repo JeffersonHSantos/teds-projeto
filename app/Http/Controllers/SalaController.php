@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Aula;
 use App\Models\Sala;
 use Illuminate\Http\Request;
 
@@ -35,7 +36,9 @@ class SalaController extends Controller
 
         Sala::create($dados);
 
-        return redirect()->route('salas.index');
+        return redirect()
+            ->route('salas.index')
+            ->with('success', 'Sala cadastrada com sucesso.');
     }
 
     /**
@@ -65,7 +68,9 @@ class SalaController extends Controller
 
         $sala->update($dados);
 
-        return redirect()->route('salas.index');
+        return redirect()
+            ->route('salas.index')
+            ->with('success', 'Sala atualizada com sucesso.');
     }
 
     /**
@@ -73,8 +78,17 @@ class SalaController extends Controller
      */
     public function destroy(Sala $sala)
     {
+        if (Aula::query()
+            ->where('sala_id', $sala->id)
+            ->ativas()
+            ->exists()) {
+            return back()->with('popup_error', 'Não é possível excluir esta sala porque existem aulas agendadas ou em andamento vinculadas a ela.');
+        }
+
         $sala->delete();
 
-        return redirect()->route('salas.index');
+        return redirect()
+            ->route('salas.index')
+            ->with('success', 'Sala removida com sucesso.');
     }
 }
