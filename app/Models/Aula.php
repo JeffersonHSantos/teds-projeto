@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -55,13 +56,14 @@ class Aula extends Model
         $agora = Carbon::now();
 
         self::query()
-            ->where(function ($query) {
+            ->where(function (Builder $query): void {
                 $query->whereNull('status')
                     ->orWhere('status', '!=', self::STATUS_CANCELADA);
             })
             ->orderBy('data')
             ->orderBy('horario_inicio')
-            ->chunkById(100, function ($aulas) use ($agora) {
+            ->chunkById(100, function ($aulas) use ($agora): void {
+                /** @var self $aula */
                 foreach ($aulas as $aula) {
                     $statusAtualizado = $aula->statusAtual($agora);
 

@@ -186,7 +186,7 @@
                                         $statusAtual = $aula->statusAtual();
                                     @endphp
                                     <tr class="{{ $rowClasses[$statusAtual] ?? 'status-row-status-agendada' }} transition-colors duration-300" style="{{ $rowStyles[$statusAtual] ?? 'background-color: #eff6ff;' }}">
-                                        <td class="border border-gray-300 px-4 py-3" style="{{ $cellStyles[$statusAtual] ?? 'background-color: #dbeafe;' }}">{{ $aula->horario_formatado }}</td>
+                                        <td class="border border-gray-300 px-4 py-3 {{ $cellClasses[$statusAtual] ?? 'status-cell-status-agendada' }}" style="{{ $cellStyles[$statusAtual] ?? 'background-color: #dbeafe;' }}">{{ $aula->horario_formatado }}</td>
                                         <td class="border border-gray-300 px-4 py-3 {{ $cellClasses[$statusAtual] ?? 'status-cell-status-agendada' }}" style="{{ $cellStyles[$statusAtual] ?? 'background-color: #dbeafe;' }}">{{ $aula->materia }}</td>
                                         <td class="border border-gray-300 px-4 py-3 {{ $cellClasses[$statusAtual] ?? 'status-cell-status-agendada' }}" style="{{ $cellStyles[$statusAtual] ?? 'background-color: #dbeafe;' }}">{{ $aula->curso->nome }}</td>
                                         <td class="border border-gray-300 px-4 py-3 {{ $cellClasses[$statusAtual] ?? 'status-cell-status-agendada' }}" style="{{ $cellStyles[$statusAtual] ?? 'background-color: #dbeafe;' }}">{{ $aula->professor->nome }}</td>
