@@ -10,8 +10,8 @@
             create-label="Novo Professor"
         />
 
-        <form method="GET" action="{{ route('professores.index') }}">
-            <div class="relative mb-4 rounded-md border border-gray-300 bg-gray-50 p-4">
+        <div class="relative mb-4 rounded-md border border-gray-300 bg-gray-50 p-4">
+            <form method="GET" action="{{ route('professores.index') }}">
                 <div id="professores-filter-panel" class="fixed z-[9999] hidden w-[min(90vw,18rem)] max-h-[80vh] overflow-y-auto rounded-md border border-gray-200 bg-white p-2.5 shadow-2xl">
                     <div data-filter-section="professores" class="hidden space-y-2">
                         <label class="mb-2 flex items-center gap-2 font-medium text-gray-700">
@@ -37,8 +37,9 @@
                         </div>
                     </div>
                 </div>
+            </form>
 
-                <div class="overflow-x-auto rounded-md border border-gray-300">
+            <div class="overflow-x-auto rounded-md border border-gray-300">
                     <table class="min-w-full border-collapse text-sm">
                         <thead class="bg-gray-100">
                             <tr>
@@ -78,7 +79,6 @@
                     </table>
                 </div>
             </div>
-        </form>
 
         <script>
             document.addEventListener('DOMContentLoaded', () => {
