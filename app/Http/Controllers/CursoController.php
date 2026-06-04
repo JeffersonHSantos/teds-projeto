@@ -8,13 +8,22 @@ use Illuminate\Http\Request;
 
 class CursoController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $cursos = Curso::query()
-            ->latest()
+        $cursoOptions = Curso::query()
+            ->orderBy('nome')
             ->get();
 
-        return view('cursos.index', compact('cursos'));
+        $filtros = [
+            'cursos' => $this->normalizarSelecao($request->query('cursos'), $cursoOptions->pluck('id')->all()),
+        ];
+
+        $query = Curso::query()->latest();
+        $this->aplicarFiltros($query, $filtros);
+
+        $cursos = $query->get();
+
+        return view('cursos.index', compact('cursos', 'cursoOptions', 'filtros'));
     }
 
     public function create()
@@ -67,5 +76,24 @@ class CursoController extends Controller
         return redirect()
             ->route('cursos.index')
             ->with('success', 'Curso removido com sucesso.');
+    }
+
+    private function aplicarFiltros($query, array $filtros): void
+    {
+        if (! empty($filtros['cursos'])) {
+            $query->whereIn('id', $filtros['cursos']);
+        }
+    }
+
+    private function normalizarSelecao(mixed $selecionados, array $opcoes): array
+    {
+        if (is_null($selecionados)) {
+            return array_map('strval', $opcoes);
+        }
+
+        $selecionados = is_array($selecionados) ? $selecionados : [$selecionados];
+        $selecionados = array_values(array_unique(array_map('strval', $selecionados)));
+
+        return empty($selecionados) ? array_map('strval', $opcoes) : $selecionados;
     }
 }

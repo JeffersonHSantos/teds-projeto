@@ -11,10 +11,22 @@ class SalaController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $salas = Sala::latest()->get();
-        return view('salas.index', compact('salas'));
+        $salaOptions = Sala::query()
+            ->orderBy('nome')
+            ->get();
+
+        $filtros = [
+            'salas' => $this->normalizarSelecao($request->query('salas'), $salaOptions->pluck('id')->all()),
+        ];
+
+        $query = Sala::query()->latest();
+        $this->aplicarFiltros($query, $filtros);
+
+        $salas = $query->get();
+
+        return view('salas.index', compact('salas', 'salaOptions', 'filtros'));
     }
 
     /**
@@ -90,5 +102,24 @@ class SalaController extends Controller
         return redirect()
             ->route('salas.index')
             ->with('success', 'Sala removida com sucesso.');
+    }
+
+    private function aplicarFiltros($query, array $filtros): void
+    {
+        if (! empty($filtros['salas'])) {
+            $query->whereIn('id', $filtros['salas']);
+        }
+    }
+
+    private function normalizarSelecao(mixed $selecionados, array $opcoes): array
+    {
+        if (is_null($selecionados)) {
+            return array_map('strval', $opcoes);
+        }
+
+        $selecionados = is_array($selecionados) ? $selecionados : [$selecionados];
+        $selecionados = array_values(array_unique(array_map('strval', $selecionados)));
+
+        return empty($selecionados) ? array_map('strval', $opcoes) : $selecionados;
     }
 }

@@ -11,13 +11,22 @@ class ProfessorController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $professores = Professor::query()
-            ->latest()
+        $professorOptions = Professor::query()
+            ->orderBy('nome')
             ->get();
 
-        return view('professores.index', compact('professores'));
+        $filtros = [
+            'professores' => $this->normalizarSelecao($request->query('professores'), $professorOptions->pluck('id')->all()),
+        ];
+
+        $query = Professor::query()->latest();
+        $this->aplicarFiltros($query, $filtros);
+
+        $professores = $query->get();
+
+        return view('professores.index', compact('professores', 'professorOptions', 'filtros'));
     }
 
     /**
@@ -93,5 +102,24 @@ class ProfessorController extends Controller
         return redirect()
             ->route('professores.index')
             ->with('success', 'Professor removido com sucesso.');
+    }
+
+    private function aplicarFiltros($query, array $filtros): void
+    {
+        if (! empty($filtros['professores'])) {
+            $query->whereIn('id', $filtros['professores']);
+        }
+    }
+
+    private function normalizarSelecao(mixed $selecionados, array $opcoes): array
+    {
+        if (is_null($selecionados)) {
+            return array_map('strval', $opcoes);
+        }
+
+        $selecionados = is_array($selecionados) ? $selecionados : [$selecionados];
+        $selecionados = array_values(array_unique(array_map('strval', $selecionados)));
+
+        return empty($selecionados) ? array_map('strval', $opcoes) : $selecionados;
     }
 }
