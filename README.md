@@ -235,3 +235,13 @@ Jefferson H. Santos
 ## Observacao
 
 Este projeto foi desenvolvido para fins academicos, como atividade pratica da disciplina TEDS no curso de ADS da UPF.
+
+## Alterações — Filtros (2026-06-03)
+
+- **Aulas:** adicionados filtros por `salas`, `cursos`, `professores`, `materias` e `status`, além de intervalos de datas (`data_de`, `data_ate`) e horários (`horario_de`, `horario_ate`). Implementação em [app/Http/Controllers/AulaController.php](app/Http/Controllers/AulaController.php#L1-L240) com os métodos `normalizarSelecao`, `normalizarData`, `normalizarHorario` e `aplicarFiltros`.
+- **Recursos (Cursos, Professores, Salas):** suporte a seleção múltipla de filtros e lógica de aplicação em [app/Http/Controllers/CursoController.php](app/Http/Controllers/CursoController.php#L1-L160), [app/Http/Controllers/ProfessorController.php](app/Http/Controllers/ProfessorController.php#L1-L160) e [app/Http/Controllers/SalaController.php](app/Http/Controllers/SalaController.php#L1-L160).
+- **Interface (Frontend):** adicionado painel de filtros flutuante com checkboxes e botão "Todos" (select-all) em [resources/views/cursos/index.blade.php](resources/views/cursos/index.blade.php#L1-L240). Inclui JavaScript para abrir/fechar o painel, posicionamento responsivo e sincronização do checkbox "Todos" com os itens.
+- **Normalização de entrada:** datas são validadas/normalizadas para `YYYY-MM-DD` e horários para `HH:MM:SS` antes de serem usados nas consultas; seleção vazia é interpretada como "todos" (seleciona todas as opções disponíveis).
+- **Testes:** adicionados/atualizados testes que cobrem filtros por data/hora e índices de recursos, por exemplo [tests/Feature/AulaDateTimeFiltersTest.php](tests/Feature/AulaDateTimeFiltersTest.php#L1) e [tests/Feature/AulaFiltersTest.php](tests/Feature/AulaFiltersTest.php#L1).
+
+Se você quiser, eu posso também: criar um trecho de documentação mais detalhado com exemplos de query string para cada filtro, ou commitar/empacotar estas alterações num changelog separado.
