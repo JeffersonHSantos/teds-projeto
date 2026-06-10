@@ -10,20 +10,20 @@ class CursoController extends Controller
 {
     public function index(Request $request)
     {
-        $cursoOptions = Curso::query()
-            ->orderBy('nome')
-            ->get();
-
         $filtros = [
-            'cursos' => $this->normalizarSelecao($request->query('cursos'), $cursoOptions->pluck('id')->all()),
+            'cursos' => $request->input('cursos', []),
         ];
 
-        $query = Curso::query()->latest();
-        $this->aplicarFiltros($query, $filtros);
+        $query = Curso::query();
 
-        $cursos = $query->get();
+        if (!empty($filtros['cursos'])) {
+            $query->whereIn('id', $filtros['cursos']);
+        }
 
-        return view('cursos.index', compact('cursos', 'cursoOptions', 'filtros'));
+        $cursos = $query->orderBy('nome')->get();
+        $cursoOptions = Curso::orderBy('nome')->get();
+
+        return view('cursos.index', compact('cursos', 'filtros', 'cursoOptions'));
     }
 
     public function create()
@@ -76,24 +76,5 @@ class CursoController extends Controller
         return redirect()
             ->route('cursos.index')
             ->with('success', 'Curso removido com sucesso.');
-    }
-
-    private function aplicarFiltros($query, array $filtros): void
-    {
-        if (! empty($filtros['cursos'])) {
-            $query->whereIn('id', $filtros['cursos']);
-        }
-    }
-
-    private function normalizarSelecao(mixed $selecionados, array $opcoes): array
-    {
-        if (is_null($selecionados)) {
-            return array_map('strval', $opcoes);
-        }
-
-        $selecionados = is_array($selecionados) ? $selecionados : [$selecionados];
-        $selecionados = array_values(array_unique(array_map('strval', $selecionados)));
-
-        return empty($selecionados) ? array_map('strval', $opcoes) : $selecionados;
     }
 }

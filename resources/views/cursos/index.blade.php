@@ -40,7 +40,7 @@
             </form>
 
             <div class="overflow-x-auto rounded-md border border-gray-300">
-                    <table class="min-w-full border-collapse text-sm">
+                    <table id="tabela-cursos" class="min-w-full border-collapse text-sm">
                         <thead class="bg-gray-100">
                             <tr>
                                 <th class="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700">
@@ -181,6 +181,20 @@
                     });
 
                     syncSelectAll();
+                });
+            });
+
+            $(document).ready(function() {
+                $('#tabela-cursos').DataTable({
+                    language: {
+                        url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-BR.json'
+                    },
+                    paging: true,
+                    pageLength: 10,
+                    searching: true,
+                    ordering: true,
+                    info: true,
+                    responsive: true
                 });
             });
         </script>

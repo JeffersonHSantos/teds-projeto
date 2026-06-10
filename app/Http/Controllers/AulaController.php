@@ -18,39 +18,49 @@ class AulaController extends Controller
     {
         Aula::atualizarStatusAutomatico();
 
-        $salas = Sala::orderBy('nome')->get();
-        $cursos = Curso::orderBy('nome')->get();
-        $professores = Professor::orderBy('nome')->get();
-        $materias = Aula::query()
-            ->whereNotNull('materia')
-            ->where('materia', '!=', '')
-            ->distinct()
-            ->orderBy('materia')
-            ->pluck('materia')
-            ->values();
-        $statusOptions = Aula::statusOptions();
-
         $filtros = [
-            'salas' => $this->normalizarSelecao($request->query('salas'), $salas->pluck('id')->all()),
-            'cursos' => $this->normalizarSelecao($request->query('cursos'), $cursos->pluck('id')->all()),
-            'professores' => $this->normalizarSelecao($request->query('professores'), $professores->pluck('id')->all()),
-            'materias' => $this->normalizarSelecao($request->query('materias'), $materias->all()),
-            'status' => $this->normalizarSelecao($request->query('status'), array_keys($statusOptions)),
-            'data_de' => $this->normalizarData($request->query('data_de')),
-            'data_ate' => $this->normalizarData($request->query('data_ate')),
-            'horario_de' => $this->normalizarHorario($request->query('horario_de')),
-            'horario_ate' => $this->normalizarHorario($request->query('horario_ate')),
+            'salas' => $request->input('salas', []),
+            'cursos' => $request->input('cursos', []),
+            'professores' => $request->input('professores', []),
+            'materias' => $request->input('materias', []),
+            'status' => $request->input('status', []),
+            'data_de' => $request->input('data_de'),
+            'data_ate' => $request->input('data_ate'),
+            'horario_de' => $request->input('horario_de'),
+            'horario_ate' => $request->input('horario_ate'),
         ];
 
         $query = Aula::with(['sala', 'curso', 'professor'])
-            ->orderBy('data')
-            ->orderBy('horario_inicio');
+            ->latest();
 
-        $this->aplicarFiltros($query, $filtros);
+        if (!empty($filtros['salas'])) $query->whereIn('sala_id', $filtros['salas']);
+        if (!empty($filtros['cursos'])) $query->whereIn('curso_id', $filtros['cursos']);
+        if (!empty($filtros['professores'])) $query->whereIn('professor_id', $filtros['professores']);
+        if (!empty($filtros['materias'])) $query->whereIn('materia', $filtros['materias']);
+        
+        if ($filtros['data_de']) $query->whereDate('data', '>=', $filtros['data_de']);
+        if ($filtros['data_ate']) $query->whereDate('data', '<=', $filtros['data_ate']);
+
+        if ($filtros['horario_de']) $query->where('horario_inicio', '>=', $filtros['horario_de']);
+        if ($filtros['horario_ate']) $query->where('horario_termino', '<=', $filtros['horario_ate']);
 
         $aulas = $query->get();
 
-        return view('aulas.index', compact('aulas', 'salas', 'cursos', 'professores', 'materias', 'statusOptions', 'filtros'));
+        $salas = Sala::orderBy('nome')->get();
+        $cursos = Curso::orderBy('nome')->get();
+        $professores = Professor::orderBy('nome')->get();
+        $materias = Aula::distinct()->pluck('materia');
+        $statusOptions = [
+            'AGENDADA' => 'Agendada',
+            'EM_ANDAMENTO' => 'Em Andamento',
+            'REALIZADA' => 'Realizada',
+            'CANCELADA' => 'Cancelada',
+        ];
+
+        return view('aulas.index', compact(
+            'aulas', 'filtros', 'salas', 'cursos', 
+            'professores', 'materias', 'statusOptions'
+        ));
     }
 
     /**
@@ -177,64 +187,5 @@ class AulaController extends Controller
         }
 
         return null;
-    }
-
-    private function aplicarFiltros($query, array $filtros): void
-    {
-        $query->whereIn('sala_id', $filtros['salas']);
-        $query->whereIn('curso_id', $filtros['cursos']);
-        $query->whereIn('professor_id', $filtros['professores']);
-        $query->whereIn('materia', $filtros['materias']);
-        $query->whereIn('status', $filtros['status']);
-
-        if ($filtros['data_de']) {
-            $query->whereDate('data', '>=', $filtros['data_de']);
-        }
-
-        if ($filtros['data_ate']) {
-            $query->whereDate('data', '<=', $filtros['data_ate']);
-        }
-
-        if ($filtros['horario_de']) {
-            $query->where('horario_termino', '>', $filtros['horario_de']);
-        }
-
-        if ($filtros['horario_ate']) {
-            $query->where('horario_inicio', '<', $filtros['horario_ate']);
-        }
-    }
-
-    private function normalizarSelecao(mixed $selecionados, array $opcoes): array
-    {
-        $selecionados = is_array($selecionados) ? $selecionados : [];
-
-        $selecionados = array_values(array_intersect(
-            array_map(static fn ($valor) => (string) $valor, $selecionados),
-            array_map(static fn ($valor) => (string) $valor, $opcoes),
-        ));
-
-        if ($selecionados === []) {
-            return array_map(static fn ($valor) => (string) $valor, $opcoes);
-        }
-
-        return $selecionados;
-    }
-
-    private function normalizarData(mixed $valor): ?string
-    {
-        if (! is_string($valor) || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $valor)) {
-            return null;
-        }
-
-        return $valor;
-    }
-
-    private function normalizarHorario(mixed $valor): ?string
-    {
-        if (! is_string($valor) || ! preg_match('/^\d{2}:\d{2}$/', $valor)) {
-            return null;
-        }
-
-        return $valor . ':00';
     }
 }

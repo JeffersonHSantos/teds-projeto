@@ -13,20 +13,20 @@ class SalaController extends Controller
      */
     public function index(Request $request)
     {
-        $salaOptions = Sala::query()
-            ->orderBy('nome')
-            ->get();
-
         $filtros = [
-            'salas' => $this->normalizarSelecao($request->query('salas'), $salaOptions->pluck('id')->all()),
+            'salas' => $request->input('salas', []),
         ];
 
-        $query = Sala::query()->latest();
-        $this->aplicarFiltros($query, $filtros);
+        $query = Sala::query();
 
-        $salas = $query->get();
+        if (!empty($filtros['salas'])) {
+            $query->whereIn('id', $filtros['salas']);
+        }
 
-        return view('salas.index', compact('salas', 'salaOptions', 'filtros'));
+        $salas = $query->orderBy('nome')->get();
+        $salaOptions = Sala::orderBy('nome')->get();
+
+        return view('salas.index', compact('salas', 'filtros', 'salaOptions'));
     }
 
     /**
@@ -102,24 +102,5 @@ class SalaController extends Controller
         return redirect()
             ->route('salas.index')
             ->with('success', 'Sala removida com sucesso.');
-    }
-
-    private function aplicarFiltros($query, array $filtros): void
-    {
-        if (! empty($filtros['salas'])) {
-            $query->whereIn('id', $filtros['salas']);
-        }
-    }
-
-    private function normalizarSelecao(mixed $selecionados, array $opcoes): array
-    {
-        if (is_null($selecionados)) {
-            return array_map('strval', $opcoes);
-        }
-
-        $selecionados = is_array($selecionados) ? $selecionados : [$selecionados];
-        $selecionados = array_values(array_unique(array_map('strval', $selecionados)));
-
-        return empty($selecionados) ? array_map('strval', $opcoes) : $selecionados;
     }
 }
