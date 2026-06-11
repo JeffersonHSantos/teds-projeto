@@ -13,20 +13,8 @@ class ProfessorController extends Controller
      */
     public function index(Request $request)
     {
-        $filtros = [
-            'professores' => $request->input('professores', []),
-        ];
-
-        $query = Professor::query();
-
-        if (!empty($filtros['professores'])) {
-            $query->whereIn('id', $filtros['professores']);
-        }
-
-        $professores = $query->orderBy('nome')->get();
-        $professorOptions = Professor::orderBy('nome')->get();
-
-        return view('professores.index', compact('professores', 'filtros', 'professorOptions'));
+        $professores = Professor::orderBy('nome')->get();
+        return view('professores.index', compact('professores'));
     }
 
     /**

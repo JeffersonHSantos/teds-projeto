@@ -11,56 +11,20 @@ use Illuminate\Http\Request;
 
 class AulaController extends Controller
 {
+    // Controlador de recurso para CRUD de aulas.
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
+        // Atualiza o status das aulas antes de exibir a lista.
         Aula::atualizarStatusAutomatico();
-
-        $filtros = [
-            'salas' => $request->input('salas', []),
-            'cursos' => $request->input('cursos', []),
-            'professores' => $request->input('professores', []),
-            'materias' => $request->input('materias', []),
-            'status' => $request->input('status', []),
-            'data_de' => $request->input('data_de'),
-            'data_ate' => $request->input('data_ate'),
-            'horario_de' => $request->input('horario_de'),
-            'horario_ate' => $request->input('horario_ate'),
-        ];
-
-        $query = Aula::with(['sala', 'curso', 'professor'])
-            ->latest();
-
-        if (!empty($filtros['salas'])) $query->whereIn('sala_id', $filtros['salas']);
-        if (!empty($filtros['cursos'])) $query->whereIn('curso_id', $filtros['cursos']);
-        if (!empty($filtros['professores'])) $query->whereIn('professor_id', $filtros['professores']);
-        if (!empty($filtros['materias'])) $query->whereIn('materia', $filtros['materias']);
         
-        if ($filtros['data_de']) $query->whereDate('data', '>=', $filtros['data_de']);
-        if ($filtros['data_ate']) $query->whereDate('data', '<=', $filtros['data_ate']);
+        $aulas = Aula::with(['sala', 'curso', 'professor'])
+            ->latest()
+            ->get();
 
-        if ($filtros['horario_de']) $query->where('horario_inicio', '>=', $filtros['horario_de']);
-        if ($filtros['horario_ate']) $query->where('horario_termino', '<=', $filtros['horario_ate']);
-
-        $aulas = $query->get();
-
-        $salas = Sala::orderBy('nome')->get();
-        $cursos = Curso::orderBy('nome')->get();
-        $professores = Professor::orderBy('nome')->get();
-        $materias = Aula::distinct()->pluck('materia');
-        $statusOptions = [
-            'AGENDADA' => 'Agendada',
-            'EM_ANDAMENTO' => 'Em Andamento',
-            'REALIZADA' => 'Realizada',
-            'CANCELADA' => 'Cancelada',
-        ];
-
-        return view('aulas.index', compact(
-            'aulas', 'filtros', 'salas', 'cursos', 
-            'professores', 'materias', 'statusOptions'
-        ));
+        return view('aulas.index', compact('aulas'));
     }
 
     /**
@@ -118,6 +82,7 @@ class AulaController extends Controller
      */
     public function edit(Aula $aula)
     {
+        // Exibe o formulário de edição preenchido com a aula selecionada.
         $salas = Sala::all();
         $cursos = Curso::all();
         $professores = Professor::all();
@@ -160,6 +125,7 @@ class AulaController extends Controller
      */
     public function destroy(Aula $aula)
     {
+        // Remove a aula do banco de dados.
         Aula::destroy($aula->id);
 
         return redirect()
@@ -167,6 +133,7 @@ class AulaController extends Controller
             ->with('success', 'Aula removida com sucesso.');
     }
 
+    // Validação adicional que garante que não haja conflito de horário.
     private function validarConflitosHorario(array $dados, ?int $aulaId = null): ?string
     {
         $inicio = Carbon::createFromFormat('H:i', $dados['horario_inicio'])->format('H:i:s');

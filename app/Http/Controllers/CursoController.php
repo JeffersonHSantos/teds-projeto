@@ -10,20 +10,8 @@ class CursoController extends Controller
 {
     public function index(Request $request)
     {
-        $filtros = [
-            'cursos' => $request->input('cursos', []),
-        ];
-
-        $query = Curso::query();
-
-        if (!empty($filtros['cursos'])) {
-            $query->whereIn('id', $filtros['cursos']);
-        }
-
-        $cursos = $query->orderBy('nome')->get();
-        $cursoOptions = Curso::orderBy('nome')->get();
-
-        return view('cursos.index', compact('cursos', 'filtros', 'cursoOptions'));
+        $cursos = Curso::orderBy('nome')->get();
+        return view('cursos.index', compact('cursos'));
     }
 
     public function create()

@@ -1,247 +1,148 @@
-## Enunciado do Trabalho
+## Sistema TEDS - Documentação Completa
 
-O trabalho (em dupla) consiste em desenvolver uma solucao pratica de um sistema informatizado aplicado a uma area de interesse. O trabalho deve atender os seguintes requisitos:
+Sistema web em Laravel para gerenciar cursos, salas, professores e aulas, com foco em exibição de aulas por data (painel/TV) e controle automático de status por horário.
 
-- Ser desenvolvido em PHP com framework Laravel;
-- Deve conter uma pagina inicial, permitindo acesso ao Login e Registro;
-- Deve conter um dashboard, permitindo acesso aos cadastros atraves de menus;
-- Deve conter, ao menos, 3 cadastros (CRUD) basicos, ou seja, sem chaves estrangeiras (FKs);
-- Deve conter, ao menos, 1 cadastro (CRUD) contendo FKs;
-- Deve ser desenvolvido dentro do padrao MVC apresentado em aula;
-- A base de dados deve ser projetada utilizando migrations;
-- Ao longo da disciplina novas funcionalidades serao apresentadas e requisitadas como obrigatorias, como paginacao em listagens, tela de pesquisa, criptografia de rotas e utilizacao de componentes de terceiros. No decorrer do semestre, serao disponibilizados momentos para implementar o trabalho pratico em sala de aula, como forma de praticar e aplicar o conhecimento adquirido na solucao solicitada.
+---
 
-A primeira etapa do trabalho: resumo com requisitos + modelagem dos dados, o tema do sistema a ser desenvolvido, e submeter o documento em atividade no Moodle.
+## Conteúdo desta documentação
 
-# Sistema TEDS - Gerenciamento de Aulas
+- Visão geral e objetivo
+- Funcionalidades principais
+- Modelos e migrações (colunas essenciais)
+- Controladores e comportamentos importantes
+- Rotas relevantes
+- Views (onde o horário aparece)
+- Formatos de dados e regras (datas/horários)
+- Comandos úteis e manutenção (cache/views)
+- Como executar localmente
+- Testes
 
-Sistema web desenvolvido em Laravel para cadastro e consulta de informações acadêmicas, com foco em visualizacao de aulas por data para uso em sala e exibicao em TV.
+---
 
-## Identificacao Academica
+## Visão geral
 
-- Instituicao: Universidade de Passo Fundo (UPF)
-- Curso: Analise e Desenvolvimento de Sistemas (ADS)
-- Nivel: 3o nivel
-- Disciplina: TEDS - Topicos Especiais em Desenvolvimento de Software I
-- Atividade: Pratico 1
-- Aluno: Jefferson H. Santos
-- Matricula: 210017
+O sistema oferece CRUDs para `cursos`, `professores`, `salas` e `aulas`. A funcionalidade central é o painel (`/dashboard`) que exibe as aulas de uma data selecionada, com modo tela-cheia (TV) e atualização automática a cada minuto.
 
-## Objetivo do Projeto
+## Funcionalidades principais
 
-Disponibilizar uma aplicacao para:
+- CRUD completo para Cursos, Professores e Salas
+- CRUD de Aulas vinculando Sala, Curso e Professor
+- Validação de conflitos de horário (mesma sala/professor em conflito)
+- Dashboard com filtro por data, ordenação por `horario_inicio` e destaque visual por status
+- Modo TV (tela cheia) com auto-refresh e atalho F11
+- Filtros avançados (por sala, curso, professor, matéria, status, intervalos de data e horário)
 
-- Cadastro de cursos, professores, salas e aulas
-- Organizacao de aulas por data e horario
-- Consulta rapida no dashboard
-- Exibicao em modo tela cheia para TV, facilitando a localizacao dos alunos
+## Modelos e migrações
 
-## Funcionalidades Implementadas
+- `app/Models/Aula.php`
+	- Campos importantes (`$fillable`): `sala_id`, `curso_id`, `professor_id`, `materia`, `data`, `horario`, `horario_inicio`, `horario_termino`, `status`
+	- Accessor: `getHorarioFormatadoAttribute()` retorna `HH:MM - HH:MM` ou `HH:MM` conforme disponível.
+	- Método estático `atualizarStatusAutomatico()` calcula e persiste o status das aulas com base em `data`, `horario_inicio` e `horario_termino`.
 
-### 1. CRUD de Cursos
+- Migração inicial: `database/migrations/2026_04_26_173310_create_aulas_table.php` cria `data` (date) e `horario` (string).
+- Migração de aprimoramento: `database/migrations/2026_05_27_000000_add_horario_inicio_e_termino_to_aulas_table.php` adiciona `horario_inicio` e `horario_termino` (`time`, nullable).
 
-- Criar curso
-- Listar cursos
-- Editar curso
-- Excluir curso
+Observação: `horario` é mantido como campo legível (ex.: "08:30 - 09:20") e `horario_inicio`/`horario_termino` são usados para comparações/ordenação/cálculos.
 
-### 2. CRUD de Professores
+## Controladores e regras importantes
 
-- Criar professor
-- Listar professores
-- Editar professor
-- Excluir professor
+- `app/Http/Controllers/AulaController.php`
+	- `index`: atualiza status via `Aula::atualizarStatusAutomatico()` e lista aulas.
+	- `create` / `edit`: retornam views com relações (salas, cursos, professores).
+	- `store` / `update`: validam campos (`date` para `data` e `date_format:H:i` para horários), convertem `H:i` para `H:i:s` para armazenamento em `horario_inicio`/`horario_termino` e populam `horario` (string) com `substr()`.
+	- `validarConflitosHorario`: verifica conflitos por sobreposição (professor/sala) para a mesma `data`.
 
-### 3. CRUD de Salas
+## Regras de status das aulas
 
-- Criar sala
-- Listar salas
-- Editar sala
-- Excluir sala
+- Estados: `AGENDADA`, `EM_ANDAMENTO`, `REALIZADA`, `CANCELADA`.
+- Lógica (em `Aula::statusAtual()`):
+	- Se `status` for `CANCELADA` retorna `CANCELADA`.
+	- Se `data`, `horario_inicio` ou `horario_termino` estiverem vazios, mantém status atual (ou `AGENDADA` por padrão).
+	- Converte `data + horario_inicio/termino` para objetos Carbon e compara com `now()`:
+		- >= `termino` => `REALIZADA`
+		- >= `inicio` => `EM_ANDAMENTO`
+		- caso contrário => `AGENDADA`
 
-### 4. CRUD de Aulas
+## Rotas relevantes
 
-- Criar aula vinculando sala, curso e professor
-- Listar aulas com informacoes relacionais
-- Editar aula
-- Excluir aula
+- `/dashboard` (GET) — exibe painel (consulta por `data` querystring). Implementação em [routes/web.php](routes/web.php).
+- Recursos RESTful:
+	- `/cursos` — controller `CursoController`
+	- `/professores` — controller `ProfessorController`
+	- `/salas` — controller `SalaController`
+	- `/aulas` — controller `AulaController`
 
-### 5. Dashboard com Filtro por Data
+Filtros por querystring (implementação de filtros disponíveis no controller de Aulas): `data_de`, `data_ate`, `horario_de`, `horario_ate`, `salas[]`, `cursos[]`, `professores[]`, `status`, `materia`.
 
-- Selecao de data
-- Exibicao das aulas da data selecionada
-- Ordenacao por horario crescente
-- Exibicao em formato de tabela para consulta rapida
-- Atualizacao automatica do status das aulas no carregamento do painel
-- Atualizacao da tabela em tempo real a cada minuto, sem sair da tela cheia
+## Views e onde o horário é exibido
 
-### 6. Modo TV (Tela Cheia)
+- Painel (TV): `resources/views/dashboard.blade.php` — coluna `Horário` exibe `$aula->horario_formatado` (accessor do model).
+- Lista de aulas (index): `resources/views/aulas/index.blade.php` também exibe `horario_formatado`.
+- Formulário de Aulas: `resources/views/aulas/create.blade.php` — campos `horario_inicio` e `horario_termino` (input `type=time`).
 
-- Botao para entrar em tela cheia
-- Foco somente nas informacoes da tabela
-- Exibicao do dia da semana da data selecionada em fullscreen
-- Saida da tela cheia pelo atalho do navegador ou pela tecla F11
-- Interface com destaque visual por status, incluindo cores nas linhas e nas celulas
+## Formatos de dados
 
-### 7. Destaque Visual dos Status
+- `data`: `YYYY-MM-DD` (campo `date`).
+- `horario_inicio` / `horario_termino`: entrada via `H:i` (ex.: `08:30`); armazenado como `H:i:s` (ex.: `08:30:00`).
+- `horario` (string): representação legível `HH:MM - HH:MM` usada para exibição rápida.
 
-- Coluna de status no dashboard TV com o texto do status atual da aula
-- Linhas e celulas com background colorido por status
-- Em andamento com destaque mais forte e animacao de cor gradativa
-- Agendada e Realizada com cores diferenciadas para facilitar a leitura
+## Comandos úteis e manutenção
 
-### 8. Atualizacao de Status das Aulas
+- Limpar views compiladas (forçar recompilação Blade):
 
-- O sistema sincroniza automaticamente o status das aulas com base no horario atual
-- O painel usa o mesmo calculo de status da listagem de aulas para manter consistencia
-- O status exibido no dashboard reflete o momento atual sem depender de recarregar a pagina manualmente
+```bash
+php artisan view:clear
+```
 
-## Tecnologias Utilizadas
+- Limpar caches do framework (config, routes, views, events):
 
-- PHP 8.3
-- Laravel 13
-- Blade
-- Eloquent ORM
-- MySQL ou SQLite (compatibilidade via migrations)
-- Tailwind CSS
-- Vite
-- Node.js + npm
+```bash
+php artisan optimize:clear
+```
 
-## Estrutura Funcional (Resumo)
+- Rodar testes:
 
-- Rotas web em routes/web.php
-- Controladores em app/Http/Controllers
-- Models em app/Models
-- Migrations em database/migrations
-- Views Blade em resources/views
+```bash
+./vendor/bin/phpunit
+```
 
-## Modelagem de Dados
+## Como executar localmente
 
-### Tabela cursos
-
-- id
-- nome
-- timestamps
-
-### Tabela professors
-
-- id
-- nome
-- timestamps
-
-### Tabela salas
-
-- id
-- nome
-- timestamps
-
-### Tabela aulas
-
-- id
-- sala_id (FK)
-- curso_id (FK)
-- professor_id (FK)
-- materia
-- data
-- horario
-- timestamps
-
-Relacoes principais:
-
-- Uma aula pertence a uma sala
-- Uma aula pertence a um curso
-- Uma aula pertence a um professor
-
-## Requisitos para Rodar o Projeto
-
-- PHP 8.3+
-- Composer
-- Node.js e npm
-- Banco de dados configurado no arquivo .env
-
-## Como Executar o Projeto
-
-### 1. Instalar dependencias
+1. Instalar dependências
 
 ```bash
 composer install
 npm install
 ```
 
-### 2. Configurar ambiente
+2. Copiar `.env` e gerar chave
 
 ```bash
 cp .env.example .env
 php artisan key:generate
 ```
 
-No Windows PowerShell, se necessario:
-
-```powershell
-Copy-Item .env.example .env
-php artisan key:generate
-```
-
-### 3. Configurar banco e rodar migrations
+3. Configurar banco (ex.: .env) e rodar migrations
 
 ```bash
 php artisan migrate
 ```
 
-### 4. Subir o projeto em desenvolvimento
-
-Em um terminal:
+4. Iniciar servidores em desenvolvimento
 
 ```bash
 php artisan serve
-```
-
-Em outro terminal:
-
-```bash
 npm run dev
 ```
 
-Opcional (comando unico do Composer):
+## Testes automatizados
 
-```bash
-composer run dev
-```
+Há testes de unidade e feature cobrindo filtros, atualização automática de status e endpoints principais em `tests/Unit` e `tests/Feature`.
 
-## Acesso ao Sistema
+## Observações finais
 
-- URL local padrao: http://127.0.0.1:8000
-- As rotas principais de negocio estao protegidas por autenticacao
+- O painel utiliza auto-refresh via AJAX a cada minuto para atualizar o conteúdo em modo TV sem recarregar a página.
+- A validação de horários impede conflitos para mesma `data` entre aulas que se sobreponham (por `professor_id` e `sala_id`).
+- Se quiser, eu posso gerar um changelog separado com commits que introduziram filtros e melhorias, ou adicionar exemplos de querystring para cada filtro no README.
 
-## Rotas Principais
-
-- /dashboard
-- /cursos
-- /professores
-- /salas
-- /aulas
-
-## Melhorias Realizadas no Frontend
-
-- Padronizacao visual de paginas com layout consistente
-- Tabelas no estilo planilha para melhor leitura
-- Componentizacao de elementos Blade para reduzir repeticao
-- Formularios com mensagens de validacao mais claras
-
-## Autor
-
-Jefferson H. Santos
-
-## Observacao
-
-Este projeto foi desenvolvido para fins academicos, como atividade pratica da disciplina TEDS no curso de ADS da UPF.
-
-## Alterações — Filtros (2026-06-03)
-
-- **Aulas:** adicionados filtros por `salas`, `cursos`, `professores`, `materias` e `status`, além de intervalos de datas (`data_de`, `data_ate`) e horários (`horario_de`, `horario_ate`). Implementação em [app/Http/Controllers/AulaController.php](app/Http/Controllers/AulaController.php#L1-L240) com os métodos `normalizarSelecao`, `normalizarData`, `normalizarHorario` e `aplicarFiltros`.
-- **Recursos (Cursos, Professores, Salas):** suporte a seleção múltipla de filtros e lógica de aplicação em [app/Http/Controllers/CursoController.php](app/Http/Controllers/CursoController.php#L1-L160), [app/Http/Controllers/ProfessorController.php](app/Http/Controllers/ProfessorController.php#L1-L160) e [app/Http/Controllers/SalaController.php](app/Http/Controllers/SalaController.php#L1-L160).
-- **Interface (Frontend):** adicionado painel de filtros flutuante com checkboxes e botão "Todos" (select-all) em [resources/views/cursos/index.blade.php](resources/views/cursos/index.blade.php#L1-L240). Inclui JavaScript para abrir/fechar o painel, posicionamento responsivo e sincronização do checkbox "Todos" com os itens.
-- **Normalização de entrada:** datas são validadas/normalizadas para `YYYY-MM-DD` e horários para `HH:MM:SS` antes de serem usados nas consultas; seleção vazia é interpretada como "todos" (seleciona todas as opções disponíveis).
-- **Testes:** adicionados/atualizados testes que cobrem filtros por data/hora e índices de recursos, por exemplo [tests/Feature/AulaDateTimeFiltersTest.php](tests/Feature/AulaDateTimeFiltersTest.php#L1) e [tests/Feature/AulaFiltersTest.php](tests/Feature/AulaFiltersTest.php#L1).
-
-Se você quiser, eu posso também: criar um trecho de documentação mais detalhado com exemplos de query string para cada filtro, ou commitar/empacotar estas alterações num changelog separado.
+---

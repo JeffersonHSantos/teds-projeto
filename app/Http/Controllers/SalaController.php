@@ -13,20 +13,8 @@ class SalaController extends Controller
      */
     public function index(Request $request)
     {
-        $filtros = [
-            'salas' => $request->input('salas', []),
-        ];
-
-        $query = Sala::query();
-
-        if (!empty($filtros['salas'])) {
-            $query->whereIn('id', $filtros['salas']);
-        }
-
-        $salas = $query->orderBy('nome')->get();
-        $salaOptions = Sala::orderBy('nome')->get();
-
-        return view('salas.index', compact('salas', 'filtros', 'salaOptions'));
+        $salas = Sala::orderBy('nome')->get();
+        return view('salas.index', compact('salas'));
     }
 
     /**
